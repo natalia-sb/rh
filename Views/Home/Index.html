@@ -1,0 +1,124 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="Views\Home\Funcionario.css" />
+    <title>Funcionários</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const apiUrl = "/api/FuncionarioApi";
+            const tableBody = document.querySelector("#funcionarios-table tbody");
+            const form = document.querySelector("#funcionario-form");
+
+            // Fetch e renderiza a lista de funcionários
+            const loadFuncionarios = async () => {
+                try {
+                    const response = await fetch(apiUrl);
+                    const funcionarios = await response.json();
+                    tableBody.innerHTML = "";
+                    funcionarios.forEach(func => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${func.nome}</td>
+                            <td>${func.cargo}</td>
+                            <td>${new Date(func.dataAdmissao).toLocaleDateString()}</td>
+                            <td>${func.salario}</td>
+                            <td>${func.status}</td>
+                            <td>
+                                <button onclick="deleteFuncionario(${func.id})">Excluir</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error("Erro ao carregar funcionários:", error);
+                }
+            };
+
+            // Adiciona um novo funcionário
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const funcionario = Object.fromEntries(formData.entries());
+                funcionario.salario = parseFloat(funcionario.salario);
+                funcionario.dataAdmissao = new Date(funcionario.dataAdmissao).toISOString();
+
+                try {
+                    await fetch(apiUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(funcionario)
+                    });
+                    form.reset();
+                    loadFuncionarios();
+                } catch (error) {
+                    console.error("Erro ao adicionar funcionário:", error);
+                }
+            });
+
+            // Exclui um funcionário
+            window.deleteFuncionario = async (id) => {
+                try {
+                    await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
+                    loadFuncionarios();
+                } catch (error) {
+                    console.error("Erro ao excluir funcionário:", error);
+                }
+            };
+
+            // Carregar funcionários na inicialização
+            loadFuncionarios();
+        });
+    </script>
+</head>
+<body>
+    <h1>Lista de Funcionários</h1>
+
+    <table id="funcionarios-table" border="1">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Cargo</th>
+                <th>Data de Admissão</th>
+                <th>Salário</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Linhas serão preenchidas pelo JavaScript -->
+        </tbody>
+    </table>
+
+    <h2>Adicionar Funcionário</h2>
+    <form id="funcionario-form">
+        <label>
+            Nome:
+            <input type="text" name="nome" required />
+        </label><br />
+        <label>
+            Cargo:
+            <input type="text" name="cargo" required />
+        </label><br />
+        <label>
+            Data de Admissão:
+            <input type="date" name="dataAdmissao" required />
+        </label><br />
+        <label>
+            Salário:
+            <input type="number" name="salario" step="0.01" required />
+        </label><br />
+        <label>
+            Status:
+            <select name="status" required>
+                <option value="Ativo">Ativo</option>
+                <option value="Inativo">Inativo</option>
+            </select>
+        </label><br />
+        <button type="submit">Salvar</button>
+    </form>
+</body>
+</html>
